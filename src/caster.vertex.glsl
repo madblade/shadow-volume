@@ -47,13 +47,12 @@ void main() {
     vec3 nlight = normalize(lightPosition);
     float d = dot(normalize(normal), nlight);
 
-//    if ((isShadow1 && d < bias)) // || (isShadow2 && d < bias))
-    if (isShadow1 || isShadow2) // || (isShadow2 && d < bias))
+    if (isShadow1 || isShadow2)
     {
         float sign = isShadow1 ? 1.0 : -1.0;
         vec3 infty;
         if (d < bias * sign) {
-            infty = position - lightPosition * 1.0;
+            infty = position - lightPosition * 10.0;
         } else {
             infty = position - normal * 0.5;
         }
