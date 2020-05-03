@@ -168,8 +168,8 @@ function init()
 function renderShadows(uniforms)
 {
     // torus.material.uniforms.isShadow1.value = true;
-    scene.remove(torus);
-    sceneVolume.add(torus);
+    // scene.remove(torus);
+    // sceneVolume.add(torus);
     uniforms.forEach(u => { u.value = true; });
     // torus.material.uniforms.isShadow.value = true;
 
@@ -193,7 +193,7 @@ function renderShadows(uniforms)
     gl.stencilOp(gl.KEEP, gl.INCR, gl.KEEP);
 
     // Render shadow volumes
-    renderer.render(sceneVolume, camera);
+    renderer.render(scene, camera);
 
     // Cull back faces
     gl.cullFace(gl.BACK);
@@ -202,7 +202,7 @@ function renderShadows(uniforms)
     gl.stencilOp(gl.KEEP, gl.DECR, gl.KEEP);
 
     // Render shadow volumes again
-    renderer.render(sceneVolume, camera);
+    renderer.render(scene, camera);
 
     // Redraw against the stencil non-shadowed regions
     // Stencil buffer now reads 0 for non-shadow
@@ -218,8 +218,8 @@ function renderShadows(uniforms)
     // torus.material.uniforms.isShadow.value = false;
     uniforms.forEach(u => { u.value = false; });
     // torus.material.uniforms.isShadow1.value = false;
-    sceneVolume.remove(torus);
-    scene.add(torus);
+    // sceneVolume.remove(torus);
+    // scene.add(torus);
 }
 
 function render()

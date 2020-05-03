@@ -55,7 +55,7 @@ void main() {
         if (d < bias * sign) {
             infty = position - lightPosition * 1.0;
         } else {
-            infty = position - normal * 1.0;
+            infty = position - normal * 0.5;
         }
         translated = infty;
         vec4 newMvPosition =  modelViewMatrix * vec4(translated, 1.0);
