@@ -2,9 +2,9 @@
 // scene size
 import {
     AmbientLight, AnimationMixer, BackSide, BoxBufferGeometry,
-    Color, DirectionalLight, DoubleSide, FrontSide, Group,
+    Color, DirectionalLight, DirectionalLightHelper, DoubleSide, FrontSide, Group,
     Mesh, MeshBasicMaterial, MeshPhongMaterial,
-    PerspectiveCamera, PlaneBufferGeometry, PointLight,
+    PerspectiveCamera, PlaneBufferGeometry, PointLight, PointLightHelper,
     Scene, ShaderLib, ShaderMaterial, SphereBufferGeometry, TextureLoader, TorusKnotBufferGeometry, UniformsUtils, Vector3,
     WebGLRenderer
 } from 'three';
@@ -56,10 +56,12 @@ function initScene()
     camera.position.set(0, 0, 30);
 
     lightPosition = new Vector3(1, 1, 1);
-    light = new DirectionalLight(0xffffff, 1.0);
+    light = new PointLight(0xffffff, 1.0);
     light.position.copy(lightPosition);
     lights.push(light);
     scene.add(light);
+    let helper = new PointLightHelper(light, 5);
+    scene.add(helper);
 
     // Ambient that'll draw the shadowed region
     ambient = new AmbientLight(0x404040);
@@ -142,9 +144,18 @@ function init()
         200, 25
     );
     torus = new Mesh(g, createShadowCastingMaterial());
-    torus.scale.multiplyScalar(0.5);
+    torus.scale.multiplyScalar(0.6);
     torus.position.set(0, -5, 5);
     scene.add(torus);
+
+    let torus2 = new Mesh(new TorusKnotBufferGeometry(
+        10, 3,
+        200, 25
+    ), createShadowCastingMaterial());
+    torus2.scale.multiplyScalar(0.5);
+    torus2.rotation.set(0, Math.PI / 2, 0);
+    torus2.position.set(5, 15, 0);
+    scene.add(torus2);
 
     // g = new SphereBufferGeometry(10, 32, 32);
     // g = new BoxBufferGeometry(10, 10, 10,
@@ -219,8 +230,8 @@ function render()
     // Disable lights to draw ambient pass using .intensity = 0
     // instead of .visible = false to not force a slow shader
     // recomputation.
-    lights.forEach(function(light) {
-        light.intensity = 0;
+    lights.forEach(function(l) {
+        l.intensity = 0;
     });
 
     // Render the scene with ambient lights only
@@ -230,8 +241,8 @@ function render()
     renderShadows(activateShadowUniforms);
 
     // Re-enable lights for render
-    lights.forEach(function(light) {
-        light.intensity = 1;
+    lights.forEach(function(l) {
+        l.intensity = 1;
     });
 
     // Render scene that's not in shadow with light calculations

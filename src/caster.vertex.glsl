@@ -44,7 +44,9 @@ void main() {
     #include <worldpos_vertex>
 
     vec3 translated = position;
-    vec3 nlight = normalize(lightPosition);
+//    vec3 nlight = normalize(lightPosition);
+    vec3 nlight = normalize(lightPosition - modelMatrix[3].xyz);
+    vec4 wp = modelMatrix * vec4(position, 1.0);
     float d = dot(normalize(normal), nlight);
 
     if (isShadow1 || isShadow2)
@@ -52,7 +54,7 @@ void main() {
         float sign = isShadow1 ? 1.0 : -1.0;
         vec3 infty;
         if (d < bias * sign) {
-            infty = position - lightPosition * 10.0;
+            infty = position - nlight * 100.0;
         } else {
             infty = position - normal * 0.5;
         }
