@@ -41,20 +41,26 @@ void main() {
     #include <clipping_planes_vertex>
     vViewPosition = - mvPosition.xyz;
 
-    //    #include <worldpos_vertex>
-    vec3 translated = position;
+    #include <worldpos_vertex>
 
+    vec3 translated = position;
     vec3 nlight = normalize(lightPosition);
     float d = dot(normalize(normal), nlight);
 
-    if (isShadow1 && d < -bias || isShadow2 && d < bias)
+//    if ((isShadow1 && d < bias)) // || (isShadow2 && d < bias))
+    if (isShadow1 || isShadow2) // || (isShadow2 && d < bias))
     {
-        vec3 infty = position - lightPosition * 2.0;
+        float sign = isShadow1 ? 1.0 : -1.0;
+        vec3 infty;
+        if (d < bias * sign) {
+            infty = position - lightPosition * 1.0;
+        } else {
+            infty = position - normal * 1.0;
+        }
         translated = infty;
+        vec4 newMvPosition =  modelViewMatrix * vec4(translated, 1.0);
+        gl_Position = projectionMatrix * newMvPosition;
     }
-
-    vec4 newMvPosition =  modelViewMatrix * vec4(translated, 1.0);
-    gl_Position = projectionMatrix * newMvPosition;
 
     #include <envmap_vertex>
     #include <shadowmap_vertex>

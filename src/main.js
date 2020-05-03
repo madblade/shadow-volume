@@ -11,15 +11,6 @@ import {
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 
 import CasterVertex from './caster.vertex.glsl';
-import CasterFragment from './caster.fragment.glsl';
-import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
-import {FBXLoader} from 'three/examples/jsm/loaders/FBXLoader';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
-
-// import fbx from './data/samba.fbx';
-// import glb from './data/samba.glb';
-// import glb from './data/samba-remeshed-16k.glb';
-// import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 
 // screen size
 let WIDTH = window.innerWidth;
@@ -39,8 +30,8 @@ let renderer;
 let controls;
 let lightPosition;
 
-let mixer;
-let dancer;
+// let mixer;
+// let dancer;
 let gl;
 let lights = [];
 let ambient;
@@ -61,7 +52,7 @@ function initScene()
 
     scene = new Scene();
     scene.background = new Color(0x444444);
-    sceneVolume = new Scene();
+    sceneVolume = new Scene(); // render to a simpler scene less cpu intensive
 
     camera = new PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
     scene.add(camera);
@@ -127,65 +118,6 @@ function initScene()
     gl = renderer.getContext();
 }
 
-function loadModel()
-{
-    const url = 'https://rawgit.com/mrdoob/three.js/r100/examples/models/fbx/Samba Dancing.fbx';
-
-    // new GLTFLoader().load(glb, scn =>
-    // new GLTFLoader().load(url, scn =>
-    new FBXLoader().load(url, scn =>
-    {
-        console.log(scn);
-        let mesh = scn.scene.children[0];
-        console.log(mesh);
-
-        mesh.scale.multiplyScalar(20.0);
-        mesh.position.y = -15;
-        console.log('loaded');
-        mixer = new AnimationMixer(mesh);
-        mixer.clipAction(scn.animations[0]).play();
-
-        let c = mesh.children[1];
-        // mesh.traverse(c => {
-        if (c.isMesh) {
-            c.geometry.computeVertexNormals();
-            let mat =
-                new ShaderMaterial({
-                    uniforms: {
-                        lightPosition: { value: lightPosition },
-                        isShadow1: { value: false },
-                        isShadow2: { value: false },
-                        bias: { value: 0.01 }
-                    },
-                    vertexShader: CasterVertex,
-                    fragmentShader: CasterFragment
-                });
-            mat.morphTargets = true;
-            c.material = mat;
-            uniforms1.push(mat.uniforms.isShadow1);
-            uniforms2.push(mat.uniforms.isShadow2);
-
-            // let nh = new VertexNormalsHelper(c);
-            // scene.add(nh);
-
-            c.scale.multiplyScalar(21.2);
-            c.position.y = -15;
-        }
-        // });
-
-        // dancer = new Group();
-        // dancer.update = delta => mixer.update(delta);
-        // addMesh(mesh, container);
-        // displayOptions.push(container);
-        dancer = c;
-        scene.add(c);
-        ready = true;
-    }, undefined, error => {
-        console.log(error);
-        console.log('failed to load');
-    });
-}
-
 function init()
 {
     initScene();
@@ -194,39 +126,23 @@ function init()
         10, 3,
         200, 25
     );
-    let m = new MeshPhongMaterial({ color: 0x2194CE, shininess: 1 });
+    // let m = new MeshPhongMaterial({ color: 0x2194CE, shininess: 1 });
 
     // g = new SphereBufferGeometry(10, 32, 32);
     // g = new BoxBufferGeometry(10, 10, 10,
     //     20, 20, 20);
     // g.computeVertexNormals();
-    m = new ShaderMaterial({
-        uniforms: {
-            lightPosition: { value: lightPosition },
-            isShadow1: { value: false },
-            isShadow2: { value: false },
-            bias: { value: 0.2 }
-        },
-        vertexShader: CasterVertex,
-        fragmentShader: CasterFragment
-    });
-    uniforms1.push(m.uniforms.isShadow1);
-    uniforms2.push(m.uniforms.isShadow2);
 
-    torus = new Mesh(g, m);
-    // scene.add(torus);
-
-    let torus2 = torus.clone(true);
     let customUniforms = UniformsUtils.merge([
         ShaderLib.phong.uniforms,
         {
-            lightPosition: { value: new Vector3(0, 0, 10) },
+            lightPosition: { value: lightPosition },
             isShadow1: { value: false },
             isShadow2: { value: false },
-            bias: { value: 0.2 }
+            bias: { value: 0.01 }
         }
     ]);
-    torus2.material =
+    let material =
         new ShaderMaterial({
             uniforms: customUniforms,
             vertexShader: `
@@ -236,17 +152,23 @@ function init()
             fragmentShader: ShaderLib.phong.fragmentShader,
             lights: true
         });
-    torus2.material.depthWrite = true;
-    scene.add(torus2);
-    torus2.position.set(0, 0, -20);
-    // sceneVolume.add(torus);
+    // material.depthWrite = true;
+
+
+    torus = new Mesh(g, material);
+    uniforms1.push(torus.material.uniforms.isShadow1);
+    // uniforms2.push(torus.material.uniforms.isShadow2);
+
+    scene.add(torus);
+
     // let helper = new VertexNormalsHelper(torus, 2, 0x00ff00, 1);
     // scene.add(helper);
 }
 
 function renderShadows(uniforms)
 {
-    // scene.remove(torus);
+    // torus.material.uniforms.isShadow1.value = true;
+    scene.remove(torus);
     sceneVolume.add(torus);
     uniforms.forEach(u => { u.value = true; });
     // torus.material.uniforms.isShadow.value = true;
@@ -295,8 +217,9 @@ function renderShadows(uniforms)
 
     // torus.material.uniforms.isShadow.value = false;
     uniforms.forEach(u => { u.value = false; });
+    // torus.material.uniforms.isShadow1.value = false;
     sceneVolume.remove(torus);
-    // scene.add(torus);
+    scene.add(torus);
 }
 
 function render()
@@ -332,7 +255,7 @@ function render()
     gl.disable(gl.STENCIL_TEST);
 }
 
-let ready = false;
+// let ready = false;
 let time = 0;
 let lastTime = window.performance.now();
 function animate()
@@ -348,11 +271,14 @@ function animate()
     lightPosition.z = Math.cos(time) * 100.0;
     lightPosition.y = Math.cos(time) * Math.sin(time) * 100.0;
 
-    if (ready) mixer.update(delta / 100.0);
+    torus.material.uniforms.lightPosition.value = lightPosition;
+
+    // if (ready) mixer.update(delta / 100.0);
 
     // Update camera rotation and position
     controls.update();
 
     // Render
+    // renderer.render(scene, camera);
     render();
 }
