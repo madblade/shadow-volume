@@ -4,16 +4,20 @@
 
 // scene size
 import {
-    AmbientLight, AnimationMixer, BackSide, BoxBufferGeometry,
-    Color, DirectionalLight, DirectionalLightHelper, DoubleSide, FrontSide, Group, Matrix4,
-    Mesh, MeshBasicMaterial, MeshPhongMaterial,
+    AmbientLight, // DirectionalLight,
+    FrontSide,
+    Matrix4,
+    Mesh,
+    MeshPhongMaterial,
     PerspectiveCamera, PlaneBufferGeometry, PointLight, PointLightHelper,
-    Scene, ShaderLib, ShaderMaterial, SphereBufferGeometry, TextureLoader, TorusKnotBufferGeometry, UniformsUtils, Vector3, Vector4,
+    Scene, ShaderLib, ShaderMaterial, SphereBufferGeometry,
+    TorusKnotBufferGeometry, UniformsUtils, Vector3, Vector4,
     WebGLRenderer
 } from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 
 import CasterVertex from './caster.vertex.glsl';
+// import CasterFragment from './caster.fragment.glsl';
 
 // screen size
 let WIDTH = window.innerWidth;
@@ -85,7 +89,7 @@ function addPlanes()
 function initScene()
 {
     renderer = new WebGLRenderer({
-        antialias: true
+        antialias: true,
     });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(WIDTH, HEIGHT);
@@ -93,7 +97,6 @@ function initScene()
 
     scene = new Scene();
     sceneShadows = new Scene();
-    // scene.background = new Color(0x444444);
 
     camera = new PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
     scene.add(camera);
@@ -103,6 +106,7 @@ function initScene()
     light = new PointLight(0xffffff, 0.5);
     light.position.copy(lightPosition);
     lights.push(light);
+
     scene.add(light);
     lightHelper = new PointLightHelper(light, 5);
     scene.add(lightHelper);
@@ -128,17 +132,16 @@ function initScene()
     renderer.autoClearStencil = false;
     renderer.autoClearDepth = false;
     renderer.autoClearColor = false;
-    gl = renderer.context;
+    gl = renderer.getContext();
 }
 
-function createShadowCastingMaterial()
+function createShadowCastingMaterial(isShadow)
 {
     let customUniforms = UniformsUtils.merge([
-        ShaderLib.phong.uniforms,
+        ShaderLib.lambert.uniforms,
         {
             lightPosition: { value: lightPosition },
-            isShadow1: { value: false },
-            isShadow2: { value: false },
+            isShadow: { value: isShadow },
             bias: { value: 0.01 },
         }
     ]);
@@ -149,70 +152,84 @@ function createShadowCastingMaterial()
                 #include <common>
                 ${CasterVertex}
             `,
-        fragmentShader: ShaderLib.phong.fragmentShader,
+        fragmentShader:
+            // `
+            // #include <common>
+            // ${CasterFragment}
+            // `,
+            ShaderLib.lambert.fragmentShader,
         lights: true
     });
 
     return material;
 }
 
-function init()
+function createObjects(isShadow)
 {
-    initScene();
-
     let g = new TorusKnotBufferGeometry(
         10, 3,
         200, 25
     );
-    let torus = new Mesh(g, createShadowCastingMaterial());
+    let torus = new Mesh(g, createShadowCastingMaterial(isShadow));
     torus.scale.multiplyScalar(0.6);
     torus.position.set(-5, -10, 5);
-    scene.add(torus);
 
     let torus2 = new Mesh(new TorusKnotBufferGeometry(
         10, 3,
         200, 25
-    ), createShadowCastingMaterial());
+    ), createShadowCastingMaterial(isShadow));
     torus2.scale.multiplyScalar(0.5);
     torus2.rotation.set(0, Math.PI / 2, 0);
     torus2.position.set(15, 5, 0);
-    scene.add(torus2);
 
-    // g = new SphereBufferGeometry(10, 32, 32);
-    // g = new BoxBufferGeometry(10, 10, 10,
-    //     20, 20, 20);
-    // g.computeVertexNormals();
-    // let material = createShadowCastingMaterial();
+    let torus3 = new Mesh(new TorusKnotBufferGeometry(
+        10, 3,
+        200, 25
+    ), createShadowCastingMaterial(isShadow));
+    torus3.scale.multiplyScalar(0.5);
+    torus3.rotation.set(0, Math.PI / 2, Math.PI / 2);
+    torus3.position.set(-15, 5, 10);
 
     let sphere = new Mesh(
         new SphereBufferGeometry(5, 32, 32),
-        createShadowCastingMaterial()
+        createShadowCastingMaterial(isShadow)
     );
     sphere.position.set(0, -15, -15);
-    scene.add(sphere);
 
     let sphere2 = new Mesh(
         new SphereBufferGeometry(5, 32, 32),
-        createShadowCastingMaterial()
+        createShadowCastingMaterial(isShadow)
     );
     sphere2.scale.multiplyScalar(1.5);
     sphere2.position.set(-10, -5, -15);
-    scene.add(sphere2);
 
-    shadowCasters = [torus, torus2, sphere, sphere2];
-    // shadowCasters = [torus2];//, torus2, sphere, sphere2];
+    return [torus, torus2, torus3, sphere, sphere2];
+}
+
+function init()
+{
+    initScene();
+
+    let objs = createObjects(false);
+    objs.forEach(o => scene.add(o));
+
+    let shadows = createObjects(true);
+    shadowCasters = shadows;
+    shadowCasters.forEach(sc => {
+        sceneShadows.add(sc);
+    });
 }
 
 function renderShadows()
 {
-    shadowCasters.forEach(sc => {
-        // Render to simpler different scene.
-        scene.remove(sc);
-        sceneShadows.add(sc);
+    // shadowCasters.forEach(sc => {
+    // Render to simpler different scene.
+    // scene.remove(sc);
+    // sceneShadows.add(sc);
 
-        // Cast geometry with vertex shader.
-        sc.material.uniforms.isShadow1.value = true;
-    });
+    // Cast geometry with vertex shader.
+    // sc.material.uniforms.isShadow.value = true;
+    // });
 
     // Enable stencils
     gl.enable(gl.STENCIL_TEST);
@@ -257,11 +274,11 @@ function renderShadows()
     gl.colorMask(true, true, true, true);
 
     // Restore geometry
-    shadowCasters.forEach(sc => {
-        sceneShadows.remove(sc);
-        scene.add(sc);
-        sc.material.uniforms.isShadow1.value = false;
-    });
+    // shadowCasters.forEach(sc => {
+    // sceneShadows.remove(sc);
+    // scene.add(sc);
+    // sc.material.uniforms.isShadow.value = false;
+    // });
 }
 
 function render()
@@ -294,7 +311,6 @@ function render()
     gl.disable(gl.STENCIL_TEST);
 }
 
-// let ready = false;
 let time = 0;
 let lastTime = window.performance.now();
 function animate()
@@ -307,7 +323,7 @@ function animate()
     time += delta * 0.001;
     // time = 0.001;
     lightPosition.x = Math.sin(time) * 10.0;
-    lightPosition.z = Math.cos(time) * 10.0;
+    lightPosition.z = Math.cos(time) * 10.0 + 4.0;
     lightPosition.y = Math.cos(time) * Math.sin(time) * 10.0;
 
     shadowCasters.forEach(sc => {
@@ -320,8 +336,6 @@ function animate()
         sc.material.uniforms.lightPosition.value = vec;
     });
     light.position.copy(lightPosition);
-
-    // if (ready) mixer.update(delta / 100.0);
 
     // Update camera rotation and position
     controls.update();
