@@ -1,11 +1,11 @@
 
 // scene size
 import {
-    AmbientLight,
-    Color, DirectionalLight, DoubleSide,
+    AmbientLight, AnimationMixer, BackSide, BoxBufferGeometry,
+    Color, DirectionalLight, DoubleSide, FrontSide, Group,
     Mesh, MeshBasicMaterial, MeshPhongMaterial,
     PerspectiveCamera, PlaneBufferGeometry, PointLight,
-    Scene, ShaderMaterial, SphereBufferGeometry, TorusKnotBufferGeometry, Vector3,
+    Scene, ShaderLib, ShaderMaterial, SphereBufferGeometry, TextureLoader, TorusKnotBufferGeometry, UniformsUtils, Vector3,
     WebGLRenderer
 } from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
@@ -13,6 +13,13 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 import CasterVertex from './caster.vertex.glsl';
 import CasterFragment from './caster.fragment.glsl';
 import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper';
+import {FBXLoader} from 'three/examples/jsm/loaders/FBXLoader';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
+
+// import fbx from './data/samba.fbx';
+// import glb from './data/samba.glb';
+// import glb from './data/samba-remeshed-16k.glb';
+// import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 
 // screen size
 let WIDTH = window.innerWidth;
@@ -27,26 +34,34 @@ let FAR = 5000;
 let torus;
 let camera;
 let scene;
+let sceneVolume;
 let renderer;
 let controls;
 let lightPosition;
 
+let mixer;
+let dancer;
 let gl;
 let lights = [];
 let ambient;
+let uniforms1 = [];
+let uniforms2 = [];
 
 init();
 animate();
 
 function initScene()
 {
-    renderer = new WebGLRenderer({ antialias: true });
+    renderer = new WebGLRenderer({
+        antialias: true
+    });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(WIDTH, HEIGHT);
     document.body.appendChild(renderer.domElement);
 
     scene = new Scene();
     scene.background = new Color(0x444444);
+    sceneVolume = new Scene();
 
     camera = new PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
     scene.add(camera);
@@ -63,7 +78,7 @@ function initScene()
     // scene.add(lights[1]);
     // scene.add(lights[2]);
     lightPosition = new Vector3(1, 1, 1);
-    let light = new DirectionalLight(0xffffff, 0.1);
+    let light = new DirectionalLight(0xffffff, 1.0);
     light.position.copy(lightPosition);
     lights.push(light);
     scene.add(light);
@@ -103,15 +118,72 @@ function initScene()
     window.addEventListener('resize', resizeCallback, false);
     window.addEventListener('orientationchange', resizeCallback, false);
 
-    // HERE.
     controls = new OrbitControls(camera, renderer.domElement);
-
 
     renderer.autoClear = false;
     renderer.autoClearStencil = false;
     renderer.autoClearDepth = false;
     renderer.autoClearColor = false;
     gl = renderer.getContext();
+}
+
+function loadModel()
+{
+    const url = 'https://rawgit.com/mrdoob/three.js/r100/examples/models/fbx/Samba Dancing.fbx';
+
+    // new GLTFLoader().load(glb, scn =>
+    // new GLTFLoader().load(url, scn =>
+    new FBXLoader().load(url, scn =>
+    {
+        console.log(scn);
+        let mesh = scn.scene.children[0];
+        console.log(mesh);
+
+        mesh.scale.multiplyScalar(20.0);
+        mesh.position.y = -15;
+        console.log('loaded');
+        mixer = new AnimationMixer(mesh);
+        mixer.clipAction(scn.animations[0]).play();
+
+        let c = mesh.children[1];
+        // mesh.traverse(c => {
+        if (c.isMesh) {
+            c.geometry.computeVertexNormals();
+            let mat =
+                new ShaderMaterial({
+                    uniforms: {
+                        lightPosition: { value: lightPosition },
+                        isShadow1: { value: false },
+                        isShadow2: { value: false },
+                        bias: { value: 0.01 }
+                    },
+                    vertexShader: CasterVertex,
+                    fragmentShader: CasterFragment
+                });
+            mat.morphTargets = true;
+            c.material = mat;
+            uniforms1.push(mat.uniforms.isShadow1);
+            uniforms2.push(mat.uniforms.isShadow2);
+
+            // let nh = new VertexNormalsHelper(c);
+            // scene.add(nh);
+
+            c.scale.multiplyScalar(21.2);
+            c.position.y = -15;
+        }
+        // });
+
+        // dancer = new Group();
+        // dancer.update = delta => mixer.update(delta);
+        // addMesh(mesh, container);
+        // displayOptions.push(container);
+        dancer = c;
+        scene.add(c);
+        ready = true;
+    }, undefined, error => {
+        console.log(error);
+        console.log('failed to load');
+    });
 }
 
 function init()
@@ -125,27 +197,58 @@ function init()
     let m = new MeshPhongMaterial({ color: 0x2194CE, shininess: 1 });
 
     // g = new SphereBufferGeometry(10, 32, 32);
+    // g = new BoxBufferGeometry(10, 10, 10,
+    //     20, 20, 20);
     // g.computeVertexNormals();
     m = new ShaderMaterial({
         uniforms: {
             lightPosition: { value: lightPosition },
             isShadow1: { value: false },
-            isShadow2: { value: false }
+            isShadow2: { value: false },
+            bias: { value: 0.2 }
         },
         vertexShader: CasterVertex,
         fragmentShader: CasterFragment
     });
+    uniforms1.push(m.uniforms.isShadow1);
+    uniforms2.push(m.uniforms.isShadow2);
 
     torus = new Mesh(g, m);
-    scene.add(torus);
+    // scene.add(torus);
+
+    let torus2 = torus.clone(true);
+    let customUniforms = UniformsUtils.merge([
+        ShaderLib.phong.uniforms,
+        {
+            lightPosition: { value: new Vector3(0, 0, 10) },
+            isShadow1: { value: false },
+            isShadow2: { value: false },
+            bias: { value: 0.2 }
+        }
+    ]);
+    torus2.material =
+        new ShaderMaterial({
+            uniforms: customUniforms,
+            vertexShader: `
+                #include <common>
+                ${CasterVertex}
+            `,
+            fragmentShader: ShaderLib.phong.fragmentShader,
+            lights: true
+        });
+    torus2.material.depthWrite = true;
+    scene.add(torus2);
+    torus2.position.set(0, 0, -20);
+    // sceneVolume.add(torus);
     // let helper = new VertexNormalsHelper(torus, 2, 0x00ff00, 1);
     // scene.add(helper);
 }
 
-function renderShadows(un)
+function renderShadows(uniforms)
 {
-//
-    un.value = true;
+    // scene.remove(torus);
+    sceneVolume.add(torus);
+    uniforms.forEach(u => { u.value = true; });
     // torus.material.uniforms.isShadow.value = true;
 
     // Enable stencils
@@ -168,7 +271,7 @@ function renderShadows(un)
     gl.stencilOp(gl.KEEP, gl.INCR, gl.KEEP);
 
     // Render shadow volumes
-    renderer.render(scene, camera);
+    renderer.render(sceneVolume, camera);
 
     // Cull back faces
     gl.cullFace(gl.BACK);
@@ -177,7 +280,7 @@ function renderShadows(un)
     gl.stencilOp(gl.KEEP, gl.DECR, gl.KEEP);
 
     // Render shadow volumes again
-    renderer.render(scene, camera);
+    renderer.render(sceneVolume, camera);
 
     // Redraw against the stencil non-shadowed regions
     // Stencil buffer now reads 0 for non-shadow
@@ -190,8 +293,10 @@ function renderShadows(un)
     gl.depthMask(true);
     gl.colorMask(true, true, true, true);
 
-    un.value = false;
     // torus.material.uniforms.isShadow.value = false;
+    uniforms.forEach(u => { u.value = false; });
+    sceneVolume.remove(torus);
+    // scene.add(torus);
 }
 
 function render()
@@ -209,8 +314,8 @@ function render()
     // Render the scene with ambient lights only
     renderer.render(scene, camera);
 
-    renderShadows(torus.material.uniforms.isShadow1);
-    renderShadows(torus.material.uniforms.isShadow2);
+    renderShadows(uniforms1);
+    // renderShadows(uniforms2);
 
     // Clear depth test - may not be required
     // renderer.clear(false, true, false);
@@ -227,15 +332,7 @@ function render()
     gl.disable(gl.STENCIL_TEST);
 }
 
-function render2()
-{
-    // torus.material.uniforms.isShadow.value = true;
-    // torus.material.wireframe = true; // !torus.material.wireframe;
-    torus.material.uniforms.isShadow.value = !torus.material.uniforms.isShadow.value;
-    // renderer.clear();
-    renderer.render(scene, camera);
-}
-
+let ready = false;
 let time = 0;
 let lastTime = window.performance.now();
 function animate()
@@ -246,9 +343,12 @@ function animate()
     let delta = now - lastTime;
     lastTime = now;
     time += delta * 0.001;
+    // time = 0.001;
     lightPosition.x = Math.sin(time) * 100.0;
     lightPosition.z = Math.cos(time) * 100.0;
     lightPosition.y = Math.cos(time) * Math.sin(time) * 100.0;
+
+    if (ready) mixer.update(delta / 100.0);
 
     // Update camera rotation and position
     controls.update();

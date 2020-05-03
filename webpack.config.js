@@ -45,9 +45,14 @@ module.exports = function(env) {
                     use: ['style-loader', 'css-loader']
                 },
                 {
-                    test: /\.(png|svg|jpg|gif)$/,
-                    use: [
-                        'file-loader',
+                    test: /\.(png|svg|jpg|gif|fbx|glb)$/,
+                    use: ['file-loader'
+                        // {
+                        //     loader: 'file-loader',
+                        //     options: {
+                        //         publicPath: './dist/'
+                        //     }
+                        // }
                     ],
                 },
             ]
