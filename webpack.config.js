@@ -11,7 +11,7 @@ module.exports = function(env) {
             new CleanWebpackPlugin(),
             new HtmlWebpackPlugin({
                 template: './src/index.html',
-                // favicon: './src/img/favicon.ico',
+                favicon: './img/favicon.png',
                 baseUrl: env.development ?
                     '/' : 'https://madblade.github.io/shadow-volume/'
             }),
