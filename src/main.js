@@ -5,10 +5,10 @@
 // scene size
 import {
     AmbientLight, AnimationMixer, BackSide, BoxBufferGeometry,
-    Color, DirectionalLight, DirectionalLightHelper, DoubleSide, FrontSide, Group,
+    Color, DirectionalLight, DirectionalLightHelper, DoubleSide, FrontSide, Group, Matrix4,
     Mesh, MeshBasicMaterial, MeshPhongMaterial,
     PerspectiveCamera, PlaneBufferGeometry, PointLight, PointLightHelper,
-    Scene, ShaderLib, ShaderMaterial, SphereBufferGeometry, TextureLoader, TorusKnotBufferGeometry, UniformsUtils, Vector3,
+    Scene, ShaderLib, ShaderMaterial, SphereBufferGeometry, TextureLoader, TorusKnotBufferGeometry, UniformsUtils, Vector3, Vector4,
     WebGLRenderer
 } from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
@@ -25,7 +25,6 @@ let ASPECT = WIDTH / HEIGHT;
 let NEAR = 0.1;
 let FAR = 5000;
 
-let torus;
 let camera;
 let scene;
 let sceneShadows;
@@ -39,8 +38,6 @@ let gl;
 let ambient;
 let shadowCasters = [];
 let lights = [];
-let activateShadowUniforms = [];
-let lightPositionUniforms = [];
 
 init();
 animate();
@@ -96,14 +93,14 @@ function initScene()
 
     scene = new Scene();
     sceneShadows = new Scene();
-    scene.background = new Color(0x444444);
+    // scene.background = new Color(0x444444);
 
     camera = new PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
     scene.add(camera);
     camera.position.set(0, 0, 30);
 
     lightPosition = new Vector3(1, 1, 1);
-    light = new PointLight(0xffffff, 1.0);
+    light = new PointLight(0xffffff, 0.5);
     light.position.copy(lightPosition);
     lights.push(light);
     scene.add(light);
@@ -131,7 +128,7 @@ function initScene()
     renderer.autoClearStencil = false;
     renderer.autoClearDepth = false;
     renderer.autoClearColor = false;
-    gl = renderer.getContext();
+    gl = renderer.context;
 }
 
 function createShadowCastingMaterial()
@@ -142,7 +139,7 @@ function createShadowCastingMaterial()
             lightPosition: { value: lightPosition },
             isShadow1: { value: false },
             isShadow2: { value: false },
-            bias: { value: 0.01 }
+            bias: { value: 0.01 },
         }
     ]);
 
@@ -156,9 +153,6 @@ function createShadowCastingMaterial()
         lights: true
     });
 
-    activateShadowUniforms.push(material.uniforms.isShadow1);
-    lightPositionUniforms.push(material.uniforms.lightPosition);
-
     return material;
 }
 
@@ -170,7 +164,7 @@ function init()
         10, 3,
         200, 25
     );
-    torus = new Mesh(g, createShadowCastingMaterial());
+    let torus = new Mesh(g, createShadowCastingMaterial());
     torus.scale.multiplyScalar(0.6);
     torus.position.set(-5, -10, 5);
     scene.add(torus);
@@ -206,18 +200,19 @@ function init()
     scene.add(sphere2);
 
     shadowCasters = [torus, torus2, sphere, sphere2];
+    // shadowCasters = [torus2];//, torus2, sphere, sphere2];
 }
 
-function renderShadows(uniforms)
+function renderShadows()
 {
-    // Render to simpler different scene.
     shadowCasters.forEach(sc => {
+        // Render to simpler different scene.
         scene.remove(sc);
         sceneShadows.add(sc);
-    });
 
-    // Cast geometry with vertex shader.
-    uniforms.forEach(u => { u.value = true; });
+        // Cast geometry with vertex shader.
+        sc.material.uniforms.isShadow1.value = true;
+    });
 
     // Enable stencils
     gl.enable(gl.STENCIL_TEST);
@@ -262,10 +257,10 @@ function renderShadows(uniforms)
     gl.colorMask(true, true, true, true);
 
     // Restore geometry
-    uniforms.forEach(u => { u.value = false; });
     shadowCasters.forEach(sc => {
         sceneShadows.remove(sc);
         scene.add(sc);
+        sc.material.uniforms.isShadow1.value = false;
     });
 }
 
@@ -280,19 +275,17 @@ function render()
     lights.forEach(function(l) {
         l.intensity = 0;
     });
-    // scene.remove(lightHelper);
 
     // Render the scene with ambient lights only
     renderer.render(scene, camera);
 
     // Compute shadows into the stencil buffer.
-    renderShadows(activateShadowUniforms);
+    renderShadows();
 
     // Re-enable lights for render
     lights.forEach(function(l) {
         l.intensity = 1;
     });
-    // scene.add(lightHelper);
 
     // Render scene that's not in shadow with light calculations
     renderer.render(scene, camera);
@@ -317,8 +310,14 @@ function animate()
     lightPosition.z = Math.cos(time) * 10.0;
     lightPosition.y = Math.cos(time) * Math.sin(time) * 10.0;
 
-    lightPositionUniforms.forEach(u => {
-        u.value = lightPosition;
+    shadowCasters.forEach(sc => {
+        let tr = sc.matrixWorld;
+        let im = new Matrix4();
+        im.getInverse(tr);
+        let vec = new Vector4();
+        vec.set(lightPosition.x, lightPosition.y, lightPosition.z, 1.0);
+        vec.applyMatrix4(im);
+        sc.material.uniforms.lightPosition.value = vec;
     });
     light.position.copy(lightPosition);
 

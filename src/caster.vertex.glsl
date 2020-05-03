@@ -20,7 +20,9 @@ varying vec3 vNormal;
 #include <shadowmap_pars_vertex>
 #include <logdepthbuf_pars_vertex>
 #include <clipping_planes_pars_vertex>
-void main() {
+
+void main()
+{
     #include <uv_vertex>
     #include <uv2_vertex>
     #include <color_vertex>
@@ -44,9 +46,7 @@ void main() {
     #include <worldpos_vertex>
 
     vec3 translated = position;
-//    vec3 nlight = normalize(lightPosition);
-    vec3 nlight = normalize(lightPosition - modelMatrix[3].xyz);
-//    vec3 nlight = normalize(modellightPosition - modelMatrix[3].xyz);
+    vec3 nlight = normalize(lightPosition);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     float d = dot(normalize(normal), nlight);
 
@@ -57,7 +57,7 @@ void main() {
         if (d < bias * sign) {
             infty = position - nlight * 100.0;
         } else {
-            infty = position - normal * 1.0;
+            infty = position - normal * 0.5;
         }
         translated = infty;
         vec4 newMvPosition =  modelViewMatrix * vec4(translated, 1.0);
