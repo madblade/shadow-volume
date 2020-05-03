@@ -23,7 +23,6 @@ void main()
 
     vec3 translated = position;
     vec3 nlight = normalize(lightPosition);
-    vec4 wp = modelMatrix * vec4(position, 1.0);
     float d = dot(normalize(normal), nlight);
 
     if (isShadow)
