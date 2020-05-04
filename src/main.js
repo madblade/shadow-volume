@@ -4,7 +4,7 @@
 
 // scene size
 import {
-    AmbientLight, BoxBufferGeometry, // DirectionalLight,
+    AmbientLight,
     FrontSide,
     Matrix4,
     Mesh,
@@ -18,10 +18,10 @@ import {
 } from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 
-import {createShadowCastingMaterial} from './shadow';
-import {snapNormals} from './snapper';
-import {render} from './render';
-import {load} from './loader';
+import { createShadowCastingMaterial } from './shadow';
+// import {snapNormals} from './snapper';
+import { render } from './render';
+import { load } from './loader';
 
 // screen size
 let WIDTH = window.innerWidth;
@@ -46,6 +46,7 @@ let gl;
 let ambient;
 let shadowCasters = [];
 let lights = [];
+let mixers = [];
 
 init();
 animate();
@@ -170,7 +171,7 @@ function createObjects(isShadow)
         new SphereBufferGeometry(5, 32, 32),
         createShadowCastingMaterial(isShadow, lightPosition)
     );
-    sphere.position.set(0, -15, -15);
+    sphere.position.set(5, -15, 15);
 
     let sphere2 = new Mesh(
         new SphereBufferGeometry(5, 32, 32),
@@ -179,19 +180,20 @@ function createObjects(isShadow)
     sphere2.scale.multiplyScalar(1.5);
     sphere2.position.set(-10, -5, -15);
 
-    box = new Mesh(
-        new BoxBufferGeometry(10, 10, 10, 10),
-        createShadowCastingMaterial(isShadow, lightPosition)
-    );
-    box.scale.multiplyScalar(1.5);
-    box.position.set(10, -5, -15);
-    if (isShadow)
-        snapNormals(box);
+    // Boxes need a bit more thinking before they work.
+    // Maybe with a bias to project on theta < -PI / 4 and project far away?
+    // let box = new Mesh(
+    //     new BoxBufferGeometry(10, 10, 10, 10),
+    //     createShadowCastingMaterial(isShadow, lightPosition)
+    // );
+    // box.scale.multiplyScalar(1.5);
+    // box.position.set(10, -5, -15);
+    // if (isShadow)
+    //     snapNormals(box);
 
-    return [torus, torus2, torus3, sphere, sphere2, box];
+    return [torus, torus2, torus3, sphere, sphere2];
 }
 
-let box;
 function init()
 {
     initScene();
@@ -205,7 +207,7 @@ function init()
         sceneShadows.add(sc);
     });
 
-    load(scene, sceneShadows, lightPosition);
+    load(scene, sceneShadows, shadowCasters, lightPosition, mixers);
 }
 
 let time = 0;
@@ -233,8 +235,11 @@ function animate()
         vec.applyMatrix4(im);
         sc.material.uniforms.lightPosition.value = vec;
     });
-    box.material.uniforms.lightPosition.value = lightPosition;
     light.position.copy(lightPosition);
+
+    if (mixers.length) {
+        mixers.forEach(m => m.update(delta / 1000.));
+    }
 
     // Update camera rotation and position
     controls.update();
