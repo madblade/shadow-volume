@@ -47,18 +47,10 @@ module.exports = function(env) {
                 {
                     test: /\.(png|svg|jpg|gif|fbx|glb)$/,
                     use: ['file-loader'
-                        // {
-                        //     loader: 'file-loader',
-                        //     options: {
-                        //         publicPath: './dist/'
-                        //     }
-                        // }
                     ],
                 },
             ]
         },
-
-        // devtool: 'inline-source-map',
 
         devServer: {
             contentBase: 'http://localhost:8080/dist',

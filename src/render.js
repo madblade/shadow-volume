@@ -40,15 +40,6 @@ function renderShadows(
     gl, renderer, sceneShadows, camera
 )
 {
-    // shadowCasters.forEach(sc => {
-    // Render to simpler different scene.
-    // scene.remove(sc);
-    // sceneShadows.add(sc);
-
-    // Cast geometry with vertex shader.
-    // sc.material.uniforms.isShadow.value = true;
-    // });
-
     // Enable stencils
     gl.enable(gl.STENCIL_TEST);
 
@@ -90,13 +81,6 @@ function renderShadows(
     // Re-enable writes to the depth and color buffers
     gl.depthMask(true);
     gl.colorMask(true, true, true, true);
-
-    // Restore geometry
-    // shadowCasters.forEach(sc => {
-    // sceneShadows.remove(sc);
-    // scene.add(sc);
-    // sc.material.uniforms.isShadow.value = false;
-    // });
 }
 
 export { render };

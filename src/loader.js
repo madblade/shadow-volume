@@ -3,12 +3,18 @@ import {
 } from 'three/examples/jsm/loaders/FBXLoader';
 import {
     AnimationMixer,
-    Group, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, MeshStandardMaterial, SkinnedMesh,
+    Group
 } from 'three';
 
 import fbx from './data/samba.fbx';
 import {createShadowCastingMaterial} from './shadow';
 import {snapNormals} from './snapper';
+
+function moveMesh(mesh)
+{
+    mesh.scale.multiplyScalar(0.1);
+    mesh.position.set(5, -25, -10);
+}
 
 function load(
     scene,
@@ -21,12 +27,9 @@ function load(
         let mixer = new AnimationMixer(mesh);
         mixer.clipAction(mesh.animations[0]).play();
 
-        mesh.scale.multiplyScalar(0.1);
-        mesh.position.set(5, -25, -10);
+        moveMesh(mesh);
 
-        var container = new Group();
-        // container.update = delta => mixer.update(delta);
-
+        let container = new Group();
         container.add(mesh);
         mesh.traverse(c => {
             if (c.isMesh)
@@ -35,13 +38,14 @@ function load(
                     c.geometry,
                     createShadowCastingMaterial(true, lightPosition)
                 ); // clone mesh
-                vMesh.material.skinning = c.isSkinnedMesh;
-                vMesh.scale.multiplyScalar(0.1);
-                vMesh.position.set(5, -25, -10);
-                snapNormals(vMesh);
+
+                snapNormals(vMesh); // This is probably what you’re looking for
                 shadowCasters.push(vMesh);
                 sceneShadows.add(vMesh);
+
+                vMesh.material.skinning = c.isSkinnedMesh;
                 vMesh.skeleton = c.skeleton;
+                moveMesh(vMesh);
             }
         });
 

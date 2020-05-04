@@ -30,7 +30,6 @@ function snapNormals(mesh)
         sorted.push([x, y, z, i]);
     }
     sorted.sort((a, b) => a[0] - b[0]);
-    // console.log(sorted);
 
     // Compute extent
     let xE = maxs[0] - mins[0];
@@ -76,7 +75,6 @@ function snapNormals(mesh)
                 Math.pow(zc - zn, 2)
             );
             if (distance3D < snapDistance) {
-                // console.log(`${i} (${xc},${yc},${zc}) -> ${j} (${xn},${yn},${zn})`);
                 colocalized.push(nextPoint[3]);
                 processed[j] = 1;
             }

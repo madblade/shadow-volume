@@ -20,22 +20,16 @@ function createShadowCastingMaterial(
         }
     ]);
 
-    let material = new ShaderMaterial({
+    return new ShaderMaterial({
         uniforms: customUniforms,
         vertexShader: `
                 #include <common>
                 ${CasterVertex}
             `,
         fragmentShader:
-        // `
-        // #include <common>
-        // ${CasterFragment}
-        // `,
-        ShaderLib.lambert.fragmentShader,
+            ShaderLib.lambert.fragmentShader,
         lights: true
     });
-
-    return material;
 }
 
 export { createShadowCastingMaterial };

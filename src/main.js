@@ -201,8 +201,7 @@ function init()
     let objs = createObjects(false);
     objs.forEach(o => scene.add(o));
 
-    let shadows = createObjects(true);
-    shadowCasters = shadows;
+    shadowCasters = createObjects(true);
     shadowCasters.forEach(sc => {
         sceneShadows.add(sc);
     });
