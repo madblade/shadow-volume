@@ -1,3 +1,7 @@
+/**
+ * Model from https://www.mixamo.com/
+ */
+
 import {
     FBXLoader
 } from 'three/examples/jsm/loaders/FBXLoader';

@@ -1,5 +1,8 @@
 /**
  * Stencil shadows rendering.
+ *
+ * Partially adapted from
+ * https://raw.githack.com/dyarosla/shadowVolumeThreeJS/master/index.html
  */
 
 function render(

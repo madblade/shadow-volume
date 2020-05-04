@@ -1,8 +1,7 @@
+/**
+ * (c) madblade 2020
+ */
 
-// Partially adapted from
-// https://raw.githack.com/dyarosla/shadowVolumeThreeJS/master/index.html
-
-// scene size
 import {
     AmbientLight,
     FrontSide,

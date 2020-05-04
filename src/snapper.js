@@ -1,5 +1,7 @@
 /**
  * Normal vector field smoother.
+ * (c) madblade 2020
+ *
  * Complexity — O(n x n^1/3) assuming uniform sampling of vertices.
  * Preprocesses shadow mesh normals.
  * This prevents faces from dissociating in optimized models.

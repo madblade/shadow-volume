@@ -1,14 +1,14 @@
 {
-  "name": "widget-mobile-controller",
+  "name": "shadow-volume",
   "version": "1.0.0",
-  "description": "Performance-driven first-person mobile camera control widget.",
+  "description": "Fast stencil shadow with normal tricks.",
   "scripts": {
     "dev": "webpack --env.development --mode development",
     "build": "webpack --env.production --mode production --progress",
     "watch": "webpack-dev-server --env.development --output-public-path=/dist/ --open chrome --hot"
   },
   "keywords": [
-    "widget mobile camera threejs"
+    "volume shadows"
   ],
   "author": "madblade",
   "license": "MIT",
