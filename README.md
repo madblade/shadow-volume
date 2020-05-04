@@ -1,6 +1,8 @@
 #Fast Shadow Volumes
 
-[Demo!](https://raw.githubusercontent.com/madblade/shadow-volume/master/img/capture.jpg)
+[Demo](https://madblade.github.io/shadow-volume/)
+
+![](https://raw.githubusercontent.com/madblade/shadow-volume/master/img/capture.jpg)
 
 ## Features
 - Fast! CPU and GPU efficient
