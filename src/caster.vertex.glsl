@@ -27,12 +27,12 @@ void main()
 
     if (isShadow)
     {
-        float sign = isShadow ? 1.0 : -1.0;
         vec3 infty;
-        if (d < bias * sign) {
-            infty = position - nlight * 100.0;
+        if (d < bias) {
+            infty = position - nlight * 1000000.0;
         } else {
-            infty = position - normal * 0.5; // To expose
+            //infty = position - nlight * 0.1; // normal * 0.5; // To expose
+            infty = position - normal * 0.1; // To expose
         }
         translated = infty;
         vec4 newMvPosition =  modelViewMatrix * vec4(translated, 1.0);
