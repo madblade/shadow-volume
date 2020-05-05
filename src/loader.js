@@ -12,7 +12,7 @@ import {
 
 import fbx from './data/samba.fbx';
 import {createShadowCastingMaterial} from './shadow';
-import {snapNormals} from './snapper';
+import { getDynamicShadowVolumeGeometry, snapNormals } from './snapper';
 
 function moveMesh(mesh)
 {
@@ -33,17 +33,20 @@ function load(
 
         moveMesh(mesh);
 
+        let isApproximate = true;
         let container = new Group();
         container.add(mesh);
         mesh.traverse(c => {
             if (c.isMesh)
             {
                 let vMesh = new c.constructor(
-                    c.geometry,
-                    createShadowCastingMaterial(true, lightPosition, 0.0)
+                    isApproximate ? c.geometry : getDynamicShadowVolumeGeometry(c.geometry),
+                    createShadowCastingMaterial(true, lightPosition, 0.0, isApproximate)
                 ); // clone mesh
 
-                snapNormals(vMesh, 10000.0); // This is probably what you’re looking for
+                if (isApproximate)
+                    snapNormals(vMesh, 10000.0);
+
                 shadowCasters.push(vMesh);
                 sceneShadows.add(vMesh);
 

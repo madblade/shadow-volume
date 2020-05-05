@@ -8,7 +8,7 @@ import {
 import CasterVertex from './caster.vertex.glsl';
 
 function createShadowCastingMaterial(
-    isShadow, lightPosition, bias
+    isShadow, lightPosition, angleBias, isApproximate
 )
 {
     let customUniforms = UniformsUtils.merge([
@@ -16,7 +16,8 @@ function createShadowCastingMaterial(
         {
             lightPosition: { value: lightPosition },
             isShadow: { value: isShadow },
-            bias: { value: bias },
+            isApproximate: { value: isApproximate },
+            bias: { value: angleBias },
         }
     ]);
 

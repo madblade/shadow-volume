@@ -20,7 +20,7 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 import { createShadowCastingMaterial } from './shadow';
 import { render } from './render';
 import { load } from './loader';
-import { snapNormals } from './snapper';
+import { getDynamicShadowVolumeGeometry, snapNormals } from './snapper';
 
 // screen size
 let WIDTH = window.innerWidth;
@@ -149,7 +149,8 @@ function createObjects(isShadow)
         ),
         createShadowCastingMaterial(
             isShadow, lightPosition,
-            0.0 // no bias for non-convex geometry!
+            0.0, // no bias for non-convex geometry!
+            true
         )
     );
     torus.scale.multiplyScalar(0.6);
@@ -162,7 +163,8 @@ function createObjects(isShadow)
         ),
         createShadowCastingMaterial(
             isShadow, lightPosition,
-            0.0
+            0.0,
+            true
         )
     );
     torus2.scale.multiplyScalar(0.5);
@@ -175,7 +177,7 @@ function createObjects(isShadow)
             200, 128,
         ),
         // new TorusBufferGeometry(15, 5, 32, 32),
-        createShadowCastingMaterial(isShadow, lightPosition, 0.0)
+        createShadowCastingMaterial(isShadow, lightPosition, 0.0, true)
     );
     torus3.scale.multiplyScalar(0.5);
     torus3.rotation.set(0, Math.PI / 2, Math.PI / 2);
@@ -186,14 +188,15 @@ function createObjects(isShadow)
         new SphereBufferGeometry(5, 32, 32),
         createShadowCastingMaterial(
             isShadow, lightPosition,
-            -0.1 // small bias for very smooth convex geometries!
+            -0.1, // small bias for very smooth convex geometries!
+            true
         )
     );
     sphere.position.set(5, -15, 15);
 
     let sphere2 = new Mesh(
         new SphereBufferGeometry(5, 32, 32),
-        createShadowCastingMaterial(isShadow, lightPosition, -0.1)
+        createShadowCastingMaterial(isShadow, lightPosition, -0.1, true)
     );
     sphere2.scale.multiplyScalar(1.5);
     sphere2.position.set(-10, -5, -15);
@@ -225,8 +228,12 @@ function init()
 
     shadowCasters = createObjects(true);
     shadowCasters.forEach(sc => {
-        sc.geometry.computeVertexNormals();
-        snapNormals(sc, 100000.0);
+        if (sc.material.uniforms.isApproximate.value === true) {
+            sc.geometry.computeVertexNormals();
+            snapNormals(sc, 100000.0);
+        } else {
+            sc.geometry = getDynamicShadowVolumeGeometry(sc.geometry);
+        }
         // Debug
         // let nh2 = new VertexNormalsHelper(sc, 0.5, 0x00ff00);
         // scene.add(nh2);

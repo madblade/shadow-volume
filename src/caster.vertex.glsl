@@ -1,6 +1,7 @@
 
 uniform vec3 lightPosition;
 uniform bool isShadow;
+uniform bool isApproximate;
 uniform float bias;
 
 varying vec3 vViewPosition;
@@ -48,7 +49,8 @@ void main() {
         if (d < bias) {
             infty = translated - nlight * 10000.0;
         } else {
-            infty = translated - normalize(nn) * 0.1; // To expose
+            vec3 correction = isApproximate ? normalize(nn) : nlight;
+            infty = translated - correction * 0.1; // To expose
         }
         translated = infty;
     }
