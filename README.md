@@ -1,5 +1,5 @@
 
-# Fast Shadow Volumes
+# Fast Approximate Shadow Volumes
 
 [Demo](https://madblade.github.io/shadow-volume/)
 
