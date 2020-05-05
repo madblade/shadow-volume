@@ -43,7 +43,7 @@ function load(
                     createShadowCastingMaterial(true, lightPosition)
                 ); // clone mesh
 
-                snapNormals(vMesh); // This is probably what you’re looking for
+                snapNormals(vMesh, 1000.0); // This is probably what you’re looking for
                 shadowCasters.push(vMesh);
                 sceneShadows.add(vMesh);
 

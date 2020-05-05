@@ -6,7 +6,7 @@
  * Preprocesses shadow mesh normals.
  * This prevents faces from dissociating in optimized models.
  */
-function snapNormals(mesh)
+function snapNormals(mesh, thresh)
 {
     let g = mesh.geometry;
     let p = g.attributes.position;
@@ -41,7 +41,7 @@ function snapNormals(mesh)
         Math.pow(xE, 2) +
         Math.pow(yE, 2) +
         Math.pow(zE, 2)
-    ) / 1000.0;
+    ) / thresh;
     let maxDeltaX = snapDistance; // xE / 1000.0; // Manhattan on x
 
     // Smoothe normals

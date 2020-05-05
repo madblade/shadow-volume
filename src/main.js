@@ -18,9 +18,9 @@ import {
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 
 import { createShadowCastingMaterial } from './shadow';
-// import {snapNormals} from './snapper';
 import { render } from './render';
 import { load } from './loader';
+import { snapNormals } from './snapper';
 
 // screen size
 let WIDTH = window.innerWidth;
@@ -142,53 +142,70 @@ function initScene()
 
 function createObjects(isShadow)
 {
-    let g = new TorusKnotBufferGeometry(
-        10, 3,
-        200, 25
+    let torus = new Mesh(
+        new TorusKnotBufferGeometry(
+            10, 3,
+            200, 50
+        ),
+        createShadowCastingMaterial(
+            isShadow, lightPosition,
+            0.0 // no bias for non-convex geometry!
+        )
     );
-    let torus = new Mesh(g, createShadowCastingMaterial(isShadow, lightPosition));
     torus.scale.multiplyScalar(0.6);
     torus.position.set(-5, -10, 5);
 
-    let torus2 = new Mesh(new TorusKnotBufferGeometry(
-        10, 3,
-        200, 25
-    ), createShadowCastingMaterial(isShadow, lightPosition));
+    let torus2 = new Mesh(
+        new TorusKnotBufferGeometry(
+            10, 3,
+            200, 50
+        ),
+        createShadowCastingMaterial(
+            isShadow, lightPosition,
+            0.0
+        )
+    );
     torus2.scale.multiplyScalar(0.5);
     torus2.rotation.set(0, Math.PI / 2, 0);
     torus2.position.set(15, 5, 0);
 
-    let torus3 = new Mesh(new TorusKnotBufferGeometry(
-        10, 3,
-        200, 25
-    ), createShadowCastingMaterial(isShadow, lightPosition));
+    let torus3 = new Mesh(
+        new TorusKnotBufferGeometry(
+            10, 3,
+            200, 128,
+        ),
+        // new TorusBufferGeometry(15, 5, 32, 32),
+        createShadowCastingMaterial(isShadow, lightPosition, 0.0)
+    );
     torus3.scale.multiplyScalar(0.5);
     torus3.rotation.set(0, Math.PI / 2, Math.PI / 2);
+    torus3.rotation.set(0, 0, Math.PI / 2);
     torus3.position.set(-15, 5, 10);
 
     let sphere = new Mesh(
         new SphereBufferGeometry(5, 32, 32),
-        createShadowCastingMaterial(isShadow, lightPosition)
+        createShadowCastingMaterial(
+            isShadow, lightPosition,
+            -0.1 // small bias for very smooth convex geometries!
+        )
     );
     sphere.position.set(5, -15, 15);
 
     let sphere2 = new Mesh(
         new SphereBufferGeometry(5, 32, 32),
-        createShadowCastingMaterial(isShadow, lightPosition)
+        createShadowCastingMaterial(isShadow, lightPosition, -0.1)
     );
     sphere2.scale.multiplyScalar(1.5);
     sphere2.position.set(-10, -5, -15);
 
     // Boxes need a bit more thinking before they work.
-    // Maybe with a bias to project on theta < -PI / 4 and project far away?
+    // Maybe with a large bias to project on theta < -PI / 4 and project far away?
     // let box = new Mesh(
     //     new BoxBufferGeometry(10, 10, 10, 10),
     //     createShadowCastingMaterial(isShadow, lightPosition)
     // );
     // box.scale.multiplyScalar(1.5);
     // box.position.set(10, -5, -15);
-    // if (isShadow)
-    //     snapNormals(box);
 
     return [torus, torus2, torus3, sphere, sphere2];
 }
@@ -198,10 +215,22 @@ function init()
     initScene();
 
     let objs = createObjects(false);
-    objs.forEach(o => scene.add(o));
+    objs.forEach(o => {
+        // Debug
+        // let nh = new VertexNormalsHelper(o, 0.1);
+        // scene.add(nh);
+        // o.material = new MeshBasicMaterial({wireframe: true});
+        scene.add(o);
+    });
 
     shadowCasters = createObjects(true);
     shadowCasters.forEach(sc => {
+        sc.geometry.computeVertexNormals();
+        snapNormals(sc, 100000.0);
+        // Debug
+        // let nh2 = new VertexNormalsHelper(sc, 0.5, 0x00ff00);
+        // scene.add(nh2);
+        // scene.add(sc);
         sceneShadows.add(sc);
     });
 

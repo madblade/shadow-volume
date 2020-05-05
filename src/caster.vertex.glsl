@@ -37,9 +37,8 @@ void main() {
     #include <skinning_vertex>
 
     // #include <project_vertex>
-    vec3 pp = transformed;
     vec3 nn = objectNormal;
-    vec3 translated = pp;
+    vec3 translated = transformed;
     vec3 nlight = normalize(lightPosition);
     float d = dot(normalize(nn), nlight);
 
@@ -47,10 +46,9 @@ void main() {
     {
         vec3 infty;
         if (d < bias) {
-            infty = pp - nlight * 10000000.0;
+            infty = translated - nlight * 10000.0;
         } else {
-            //infty = position - nlight * 0.1; // normal * 0.5; // To expose
-            infty = pp - normalize(nn) * 0.1; // To expose
+            infty = translated - normalize(nn) * 0.1; // To expose
         }
         translated = infty;
     }
