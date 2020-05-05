@@ -8,15 +8,16 @@
 ## Features
 - Fast! CPU and GPU efficient
 - Only one geometry clone, no additional geometry created
-- Works on manifolds and skinned meshes
+- Works on skinned meshes
 
 ## Approach
 - Clone the geometry into a new shadow mesh (SM)
 - Snap normals on the SM to avoid holes during the projection
 - Project the back of the SM using normals
-- Use normals to resize the rest of the SM (avoids self-shadowing artifacts)
+- Use normals to resize the rest of the SM (avoids self-shadowing artefacts)
 
 ## Improvements
+- Bridge edges near every vertex where normals disagree to remove projection artefacts
 - Sharp edges (i.e. BoxBufferGeometry)
 - Adaptive normal resizing for thin geometries (using attributes?)
 - Only works for closed surfaces (manifolds) so far

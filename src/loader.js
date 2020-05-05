@@ -40,10 +40,10 @@ function load(
             {
                 let vMesh = new c.constructor(
                     c.geometry,
-                    createShadowCastingMaterial(true, lightPosition)
+                    createShadowCastingMaterial(true, lightPosition, 0.0)
                 ); // clone mesh
 
-                snapNormals(vMesh, 1000.0); // This is probably what you’re looking for
+                snapNormals(vMesh, 10000.0); // This is probably what you’re looking for
                 shadowCasters.push(vMesh);
                 sceneShadows.add(vMesh);
 
